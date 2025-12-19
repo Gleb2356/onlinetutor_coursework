@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Мои заявки — Tutor.ONL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+          crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<main class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 fw-bold mb-0">Мои заявки</h1>
+        <form class="d-flex gap-2" th:action="@{/student/requests}" method="get">
+            <select name="status" class="form-select form-select-sm">
+                <option th:value="${null}" th:selected="${status == null}">Все статусы</option>
+                <option value="NEW" th:selected="${status?.name() == 'NEW'}">NEW</option>
+                <option value="CONFIRMED" th:selected="${status?.name() == 'CONFIRMED'}">CONFIRMED</option>
+                <option value="DONE" th:selected="${status?.name() == 'DONE'}">DONE</option>
+                <option value="CANCELLED" th:selected="${status?.name() == 'CANCELLED'}">CANCELLED</option>
+            </select>
+            <button class="btn btn-outline-secondary btn-sm" type="submit">Фильтр</button>
+        </form>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Репетитор</th>
+                <th>Предмет</th>
+                <th>Дата/время</th>
+                <th>Длительность</th>
+                <th>Цена</th>
+                <th>Статус</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="req, iter : ${requests}">
+                <td th:text="${iter.count}">1</td>
+                <td th:text="${req.tutor.user.fullName}">Имя</td>
+                <td th:text="${req.subject.name}">Предмет</td>
+                <td th:text="${#temporals.format(req.startDateTime, 'dd.MM.yyyy HH:mm')}">дата</td>
+                <td th:text="${req.durationMinutes} + ' мин'">60 мин</td>
+                <td th:text="${req.price} ?: '—'">1200</td>
+                <td><span class="badge bg-light text-dark" th:text="${req.status}">NEW</span></td>
+                <td>
+                    <form th:action="@{/student/requests/{id}/cancel(id=${req.id})}" method="post"
+                          th:if="${req.status.name() == 'NEW' or req.status.name() == 'CONFIRMED'}">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button class="btn btn-sm btn-outline-danger">Отменить</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(requests)}">
+                <td colspan="8" class="text-muted">Заявок пока нет</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card mt-4 shadow-sm border-0">
+        <div class="card-body">
+            <h6 class="fw-semibold mb-2">Создать заявку по id слота</h6>
+            <p class="text-muted small mb-3">Выберите слот на карточке репетитора и вставьте его id (временно, пока нет модалки выбора).</p>
+            <form th:action="@{/student/requests}" th:object="${createForm}" method="post" class="row g-3">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="col-md-4">
+                    <label class="form-label">ID слота</label>
+                    <input class="form-control" th:field="*{slotId}" required>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('slotId')}" th:errors="*{slotId}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Длительность (мин)</label>
+                    <input class="form-control" th:field="*{durationMinutes}" placeholder="Например, 60">
+                    <div class="text-danger small" th:if="${#fields.hasErrors('durationMinutes')}" th:errors="*{durationMinutes}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Комментарий</label>
+                    <input class="form-control" th:field="*{comment}" placeholder="Опционально">
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary" type="submit">Создать заявку</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+</body>
+</html>
